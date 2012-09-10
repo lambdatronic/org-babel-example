@@ -1,0 +1,656 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+               "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<title>A Literate Programming Solution to the Potter Kata (http://codingdojo.org/cgi-bin/wiki.pl?KataPotter)</title>
+<meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1"/>
+<meta name="title" content="A Literate Programming Solution to the Potter Kata (http://codingdojo.org/cgi-bin/wiki.pl?KataPotter)"/>
+<meta name="generator" content="Org-mode"/>
+<meta name="generated" content="2012-09-10"/>
+<meta name="author" content="Gary W. Johnson"/>
+<meta name="description" content=""/>
+<meta name="keywords" content=""/>
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  html { font-family: Times, serif; font-size: 12pt; }
+  .title  { text-align: center; }
+  .todo   { color: red; }
+  .done   { color: green; }
+  .tag    { background-color: #add8e6; font-weight:normal }
+  .target { }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .right  {margin-left:auto; margin-right:0px;  text-align:right;}
+  .left   {margin-left:0px;  margin-right:auto; text-align:left;}
+  .center {margin-left:auto; margin-right:auto; text-align:center;}
+  p.verse { margin-left: 3% }
+  pre {
+	border: 1pt solid #AEBDCC;
+	background-color: #F3F5F7;
+	padding: 5pt;
+	font-family: courier, monospace;
+        font-size: 90%;
+        overflow:auto;
+  }
+  table { border-collapse: collapse; }
+  td, th { vertical-align: top;  }
+  th.right  { text-align:center;  }
+  th.left   { text-align:center;   }
+  th.center { text-align:center; }
+  td.right  { text-align:right;  }
+  td.left   { text-align:left;   }
+  td.center { text-align:center; }
+  dt { font-weight: bold; }
+  div.figure { padding: 0.5em; }
+  div.figure p { text-align: center; }
+  div.inlinetask {
+    padding:10px;
+    border:2px solid gray;
+    margin:10px;
+    background: #ffffcc;
+  }
+  textarea { overflow-x: auto; }
+  .linenr { font-size:smaller }
+  .code-highlighted {background-color:#ffff00;}
+  .org-info-js_info-navigation { border-style:none; }
+  #org-info-js_console-label { font-size:10px; font-weight:bold;
+                               white-space:nowrap; }
+  .org-info-js_search-highlight {background-color:#ffff00; color:#000000;
+                                 font-weight:bold; }
+  /*]]>*/-->
+</style>
+<script type="text/javascript">
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+<script type="text/javascript" src="http://orgmode.org/mathjax/MathJax.js">
+<!--/*--><![CDATA[/*><!--*/
+    MathJax.Hub.Config({
+        // Only one of the two following lines, depending on user settings
+        // First allows browser-native MathML display, second forces HTML/CSS
+        //  config: ["MMLorHTML.js"], jax: ["input/TeX"],
+            jax: ["input/TeX", "output/HTML-CSS"],
+        extensions: ["tex2jax.js","TeX/AMSmath.js","TeX/AMSsymbols.js",
+                     "TeX/noUndefined.js"],
+        tex2jax: {
+            inlineMath: [ ["\\(","\\)"] ],
+            displayMath: [ ['$$','$$'], ["\\[","\\]"], ["\\begin{displaymath}","\\end{displaymath}"] ],
+            skipTags: ["script","noscript","style","textarea","pre","code"],
+            ignoreClass: "tex2jax_ignore",
+            processEscapes: false,
+            processEnvironments: true,
+            preview: "TeX"
+        },
+        showProcessingMessages: true,
+        displayAlign: "center",
+        displayIndent: "2em",
+
+        "HTML-CSS": {
+             scale: 100,
+             availableFonts: ["STIX","TeX"],
+             preferredFont: "TeX",
+             webFont: "TeX",
+             imageFont: "TeX",
+             showMathMenu: true,
+        },
+        MMLorHTML: {
+             prefer: {
+                 MSIE:    "MML",
+                 Firefox: "MML",
+                 Opera:   "HTML",
+                 other:   "HTML"
+             }
+        }
+    });
+/*]]>*///-->
+</script>
+</head>
+<body>
+
+<div id="preamble">
+
+</div>
+
+<div id="content">
+<h1 class="title">A Literate Programming Solution to the Potter Kata (http://codingdojo.org/cgi-bin/wiki.pl?KataPotter)</h1>
+
+
+
+
+
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#sec-1">1 Introduction</a></li>
+<li><a href="#sec-2">2 Problem Description</a></li>
+<li><a href="#sec-3">3 Procedure</a>
+<ul>
+<li><a href="#sec-3-1">3.1 Find all partitions and then calculate their costs</a>
+<ul>
+<li><a href="#sec-3-1-1">3.1.1 Find all basket partitions via power sets</a></li>
+<li><a href="#sec-3-1-2">3.1.2 Find all basket partitions via tree traversal</a></li>
+<li><a href="#sec-3-1-3">3.1.3 Calculate partition cost</a></li>
+</ul>
+</li>
+<li><a href="#sec-3-2">3.2 Find minimum cost partition directly via dynamic programming</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-1" class="outline-2">
+<h2 id="sec-1"><span class="section-number-2">1</span> Introduction</h2>
+<div class="outline-text-2" id="text-1">
+
+
+<p>
+This is a very special document in that it not only explains the inner
+workings of this software system but also contains the complete source
+code of its implementation. Such a document is called a Literate
+Program<sup><a class="footref" name="fnr.1" href="#fn.1">1</a></sup> after the software development paradigm
+proposed by Donald Knuth in the late 1970s and first implemented in
+his 1981 WEB system.
+</p>
+<p>
+Unlike WEB and its later offspring CWEB, which were each limited to a
+single programming language (Pascal and C respectively), this Literate
+Program has been written using Emacs' Org-Mode<sup><a class="footref" name="fnr.2" href="#fn.2">2</a></sup>, allowing us to freely intermix any number of
+programming languages to create our final product. The main
+programming language we will use here is Clojure<sup><a class="footref" name="fnr.3" href="#fn.3">3</a></sup>, a modern dialect of Lisp that targets the Java
+Virtual Machine (JVM)<sup><a class="footref" name="fnr.4" href="#fn.4">4</a></sup>. However, if we needed helper programs in other
+languages (e.g., Bash, C++, Python), their code could also be freely
+intermixed in this document and automatically extracted later for
+compilation and execution.
+</p>
+<p>
+In addition to reading this document, its Org source file (potter.org)
+may be opened in Emacs and manipulated in three ways:
+</p>
+<dl>
+<dt>Tangle</dt><dd>Typing `M-x org-babel-tangle' will cause Emacs to extract
+            all the source code blocks within potter.org into separate
+            files and rearrange them into valid compilation order so
+            that they may be compiled into an executable application.
+
+</dd>
+<dt>Weave</dt><dd>Typing `M-x org-export-as-pdf' or `M-x org-export-as-html'
+           will cause Emacs to generate an attractively typeset
+           version of potter.org as either a PDF file (potter.pdf) or an
+           HTML webpage (potter.html) respectively. This is likely the
+           way in which the manual you are currently reading was
+           created.
+
+</dd>
+<dt>Evaluate</dt><dd>If potter.org is opened in Emacs' Org major mode (`M-x
+              org-mode'), and Emacs is connected to an external
+              Clojure process<sup><a class="footref" name="fnr.5" href="#fn.5">5</a></sup>, the code blocks within
+              potter.org may be loaded and executed individually by the
+              connected Clojure server using `M-x
+              org-babel-execute-src-block' (typically bound to `C-c
+              C-c').<sup><a class="footref" name="fnr.6" href="#fn.6">6</a></sup>
+</dd>
+</dl>
+
+
+<p>
+See comments in the header section of potter.org for the specific order
+in which the above Emacs commands should be executed.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-2" class="outline-2">
+<h2 id="sec-2"><span class="section-number-2">2</span> Problem Description</h2>
+<div class="outline-text-2" id="text-2">
+
+
+<p>
+Once upon a time there was a series of 5 books about a very English
+hero called Harry. (At least when this Kata was invented, there were
+only 5. Since then they have multiplied) Children all over the world
+thought he was fantastic, and, of course, so did the publisher. So in
+a gesture of immense generosity to mankind, (and to increase sales)
+they set up the following pricing model to take advantage of Harry's
+magical powers.
+</p>
+<p>
+One copy of any of the five books costs 8 EUR. If, however, you buy
+two different books from the series, you get a 5% discount on those
+two books. If you buy 3 different books, you get a 10% discount. With
+4 different books, you get a 20% discount. If you go the whole hog,
+and buy all 5, you get a huge 25% discount.
+</p>
+<p>
+Note that if you buy, say, four books, of which 3 are different
+titles, you get a 10% discount on the 3 that form part of a set, but
+the fourth book still costs 8 EUR.
+</p>
+<p>
+Potter mania is sweeping the country and parents of teenagers
+everywhere are queueing up with shopping baskets overflowing with
+Potter books. Your mission is to write a piece of code to calculate
+the price of any conceivable shopping basket, giving as big a discount
+as possible.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-3" class="outline-2">
+<h2 id="sec-3"><span class="section-number-2">3</span> Procedure</h2>
+<div class="outline-text-2" id="text-3">
+
+
+<p>
+Given a shopping basket specification [1 1 3 2 1 5 3 4] (i.e., a
+vector of the books present in the basket by their number in the
+series), our goal is to find the partition of the basket's contents
+that minimizes the total cost of purchasing the books in the basket.
+</p>
+
+</div>
+
+<div id="outline-container-3-1" class="outline-3">
+<h3 id="sec-3-1"><span class="section-number-3">3.1</span> Find all partitions and then calculate their costs</h3>
+<div class="outline-text-3" id="text-3-1">
+
+
+<p>
+One approach that we could take to solve this problem is as follows:
+</p>
+<ol>
+<li>Find all partitions of the shopping basket contents.
+</li>
+<li>Calculate the cost of the shopping basket contents using each partition.
+</li>
+<li>Select the minimum cost partition.
+</li>
+</ol>
+
+
+
+
+
+<pre class="src src-clojure">(<span style="color: #00ffff;">def</span> <span style="color: #87cefa;">find-all-basket-partitions</span> find-all-basket-partitions-via-tree-traversal)
+
+(<span style="color: #00ffff;">defn</span> <span style="color: #87cefa;">find-minimum-cost-partition-naive</span> [shopping-basket-books]
+  (<span style="color: #b0c4de;">let</span> [all-partitions (find-all-basket-partitions shopping-basket-books)
+        all-costs      (<span style="color: #eedd82;">map</span> calculate-partition-cost all-partitions)]
+    (<span style="color: #eedd82;">apply</span> min-key val (<span style="color: #eedd82;">zipmap</span> all-partitions all-costs))))
+</pre>
+
+
+
+</div>
+
+<div id="outline-container-3-1-1" class="outline-4">
+<h4 id="sec-3-1-1"><span class="section-number-4">3.1.1</span> Find all basket partitions via power sets</h4>
+<div class="outline-text-4" id="text-3-1-1">
+
+
+<p>
+A partition \(P\) of a set \(S\) is a subset of all its subsets, for which
+the following three conditions hold:
+</p>
+<ol>
+<li>\(P\) does not contain the empty set \(\emptyset\) (i.e., \(\emptyset \notin P\)).
+</li>
+<li>The union of the elements of \(P\) is equal to \(S\).
+</li>
+<li>The intersection of any two distinct elements of \(P\) is the empty set \(\emptyset\).
+</li>
+</ol>
+
+
+
+
+
+<pre class="src src-clojure">(<span style="color: #00ffff;">defn</span> <span style="color: #87cefa;">partition?</span> [P S]
+  (<span style="color: #b0c4de;">and</span> (<span style="color: #eedd82;">not</span> (<span style="color: #eedd82;">contains?</span> P #{}))
+       (<span style="color: #eedd82;">=</span> (<span style="color: #eedd82;">apply</span> union P) S)
+       (<span style="color: #eedd82;">every?</span> #(<span style="color: #eedd82;">=</span> (<span style="color: #98fb98;">intersection</span> (<span style="color: #eedd82;">first</span> %) (<span style="color: #eedd82;">second</span> %)) #{}) (combinations P 2))))
+</pre>
+
+
+<p>
+The set of all subsets of a set \(S\) (including the empty set
+\(\emptyset\) and \(S\) itself) is called the <i>power set</i> of \(S\). The
+number of elements in the power set of \(S\) is equal to \(2^{|S|}\),
+where \(|S|\) is the number of elements in \(S\).
+</p>
+
+
+
+<pre class="src src-clojure">(<span style="color: #00ffff;">defn</span> <span style="color: #87cefa;">find-power-set</span> [S]
+  (<span style="color: #eedd82;">set</span> (<span style="color: #eedd82;">map</span> set (subsets S))))
+</pre>
+
+
+<p>
+To find all partitions of the set \(S\), we could naively find all
+subsets of its power set that satisfy the partition? predicate given
+above.
+</p>
+
+
+
+<pre class="src src-clojure">(<span style="color: #00ffff;">defn</span> <span style="color: #87cefa;">find-all-partitions</span> [S]
+  (<span style="color: #eedd82;">filter</span> #(partition? % S) (subsets (find-power-set S))))
+</pre>
+
+
+<p>
+Of course, since we are working with sets and no redundant elements
+are allowed within sets, we must begin our analysis by mapping the
+input shopping basket to a set of distinct elements. We do this by
+representing each book in the basket by its index in the input vector.
+Finally, once we have found all partitions of the index set, we
+translate the returned indices back to their book numbers.
+</p>
+
+
+
+<pre class="src src-clojure">(<span style="color: #00ffff;">defn</span> <span style="color: #87cefa;">find-all-basket-partitions-via-power-sets</span> [shopping-basket-books]
+  (<span style="color: #b0c4de;">let</span> [S (<span style="color: #eedd82;">set</span> (<span style="color: #eedd82;">range</span> (<span style="color: #eedd82;">count</span> shopping-basket-books)))]
+    (<span style="color: #b0c4de;">for</span> [P (find-all-partitions S)]
+      (<span style="color: #b0c4de;">for</span> [subset P]
+        (<span style="color: #eedd82;">map</span> shopping-basket-books subset)))))
+</pre>
+
+
+</div>
+
+</div>
+
+<div id="outline-container-3-1-2" class="outline-4">
+<h4 id="sec-3-1-2"><span class="section-number-4">3.1.2</span> Find all basket partitions via tree traversal</h4>
+<div class="outline-text-4" id="text-3-1-2">
+
+
+<p>
+Although mathematically correct, our first formulation is extremely
+computationally inefficient and will scale poorly as the size of \(S\)
+grows. Recall that our goal is to maximize the discount available to
+the shopper, and since no discounts are applied for groups of less
+than two books, we can exclude all such sets within the power set.
+</p>
+
+
+
+<pre class="src src-clojure">(<span style="color: #00ffff;">defn</span> <span style="color: #87cefa;">find-discounted-subsets</span> [S]
+  (<span style="color: #eedd82;">remove</span> #(<span style="color: #eedd82;">&lt;</span> (<span style="color: #eedd82;">count</span> %) 2) (subsets S)))
+
+(<span style="color: #00ffff;">defn</span> <span style="color: #87cefa;">find-discounted-subsets-alternate</span> [S]
+  (<span style="color: #eedd82;">mapcat</span> #(combinations S %) (<span style="color: #eedd82;">range</span> 2 6)))
+</pre>
+
+
+<p>
+Since we are working with sets and no redundant elements are allowed
+within a set, we must begin our analysis by mapping the shopping
+basket contents to a set of distinct elements. For our second attempt,
+we do this by creating a map of distinct books (by their number in the
+series) to the number of times each appears in the basket.
+</p>
+<p>
+We can then envision a basket partitioning procedure, that proceeds by
+iteratively selecting one of the discounted subsets of the
+distinct books remaining in the basket until the basket is either
+empty or only contains books which cannot be grouped into a
+discounted subset. These remaining books are then grouped
+together to form the final subset of the partition.
+</p>
+<p>
+In order to explore all such possible partitions, we construct a tree
+whose nodes are pairs of (book-freqs-in-basket, selected-book-groups).
+Successor nodes are constructed by selecting all discounted subsets of
+the parent node's book-freqs-in-basket and when none remain, simply
+grouping together any books still in book-freqs-in-basket as the final
+undiscounted subset. In such a tree, each path from the root node
+(i.e., the initial shopping basket contents) to a leaf node (i.e., one
+whose book-freqs-in-basket value is empty) represents a partition of
+the tree. Each leaf node's selected-book-groups field will contain a
+complete partition of the shopping basket contents. To find all
+partitions, we simply traverse this tree and return the
+selected-book-groups field on each leaf node.
+</p>
+
+
+
+<pre class="src src-clojure">(<span style="color: #00ffff;">defstruct</span> <span style="color: #87cefa;">node</span> <span style="color: #7fffd4;">:book-freqs-in-basket</span> <span style="color: #7fffd4;">:selected-book-groups</span>)
+
+(<span style="color: #00ffff;">defn</span> <span style="color: #87cefa;">remove-from-basket</span> [book-freqs subset]
+  (<span style="color: #eedd82;">into</span> {} (<span style="color: #eedd82;">remove</span> #(zero? (<span style="color: #eedd82;">val</span> %)) (<span style="color: #eedd82;">reduce</span> #(<span style="color: #eedd82;">update-in</span> %1 [%2] dec) book-freqs subset))))
+
+(<span style="color: #00ffff;">defn</span> <span style="color: #87cefa;">expand-book-freqs</span> [book-freqs]
+  (<span style="color: #eedd82;">mapcat</span> (<span style="color: #00ffff;">fn</span> [[book-id frequency]] (<span style="color: #eedd82;">repeat</span> frequency book-id)) book-freqs))
+
+(<span style="color: #00ffff;">defn</span> <span style="color: #87cefa;">successors</span> [{<span style="color: #7fffd4;">:keys</span> [book-freqs-in-basket selected-book-groups]}]
+  (<span style="color: #b0c4de;">let</span> [distinct-books (<span style="color: #eedd82;">keys</span> book-freqs-in-basket)]
+    (<span style="color: #b0c4de;">if-let</span> [discounted-book-groups (<span style="color: #eedd82;">seq</span> (find-discounted-subsets distinct-books))]
+      (<span style="color: #b0c4de;">for</span> [books discounted-book-groups]
+        (<span style="color: #eedd82;">struct-map</span> node
+          <span style="color: #7fffd4;">:book-freqs-in-basket</span> (remove-from-basket book-freqs-in-basket books)
+          <span style="color: #7fffd4;">:selected-book-groups</span> (<span style="color: #eedd82;">cons</span> books selected-book-groups)))
+      (<span style="color: #b0c4de;">let</span> [undiscounted-book-group (expand-book-freqs book-freqs-in-basket)]
+        (<span style="color: #eedd82;">list</span> (<span style="color: #eedd82;">struct-map</span> node
+                <span style="color: #7fffd4;">:book-freqs-in-basket</span> nil
+                <span style="color: #7fffd4;">:selected-book-groups</span> (<span style="color: #b0c4de;">if</span> (<span style="color: #eedd82;">seq</span> undiscounted-book-group)
+                                        (<span style="color: #eedd82;">cons</span> undiscounted-book-group selected-book-groups)
+                                        selected-book-groups)))))))
+
+(<span style="color: #00ffff;">defn</span> <span style="color: #87cefa;">leaf-node?</span> [node]
+  (<span style="color: #eedd82;">nil?</span> (<span style="color: #7fffd4;">:book-freqs-in-basket</span> node)))
+
+(<span style="color: #00ffff;">defn</span> <span style="color: #87cefa;">find-next-partition</span> [[open-list partition]]
+  (<span style="color: #b0c4de;">if-let</span> [node (<span style="color: #eedd82;">first</span> open-list)]
+    (<span style="color: #b0c4de;">if</span> (leaf-node? node)
+      [(<span style="color: #eedd82;">rest</span> open-list) (<span style="color: #7fffd4;">:selected-book-groups</span> node)]
+      (<span style="color: #b0c4de;">recur</span> [(<span style="color: #eedd82;">concat</span> (successors node) (<span style="color: #eedd82;">rest</span> open-list)) nil]))))
+
+(<span style="color: #00ffff;">defn</span> <span style="color: #87cefa;">find-all-basket-partitions-via-tree-traversal</span> [shopping-basket-books]
+  (<span style="color: #b0c4de;">let</span> [root-node (<span style="color: #eedd82;">struct-map</span> node
+                    <span style="color: #7fffd4;">:book-freqs-in-basket</span> (frequencies shopping-basket-books)
+                    <span style="color: #7fffd4;">:selected-book-groups</span> ())]
+    (<span style="color: #b0c4de;">-&gt;&gt;</span> [(<span style="color: #eedd82;">list</span> root-node) nil]
+         (<span style="color: #eedd82;">iterate</span> find-next-partition)
+         rest
+         (<span style="color: #eedd82;">take-while</span> seq)
+         (<span style="color: #eedd82;">map</span> second))))
+</pre>
+
+
+</div>
+
+</div>
+
+<div id="outline-container-3-1-3" class="outline-4">
+<h4 id="sec-3-1-3"><span class="section-number-4">3.1.3</span> Calculate partition cost</h4>
+<div class="outline-text-4" id="text-3-1-3">
+
+
+<p>
+The cost of a partition is simply calculated as the sum of the costs
+of its bins.
+</p>
+
+
+
+<pre class="src src-clojure">(<span style="color: #00ffff;">defn</span> <span style="color: #87cefa;">calculate-partition-cost</span> [partition]
+  (<span style="color: #eedd82;">reduce</span> + (<span style="color: #eedd82;">map</span> calculate-bin-cost partition)))
+</pre>
+
+
+<p>
+To calculate the cost of a bin, we first determine the bin discount,
+which is a function of the number of distinct books in the bin as
+described in <a href="#sec-2">Problem Description</a>.
+</p>
+
+
+
+<pre class="src src-clojure">(<span style="color: #00ffff;">defn</span> <span style="color: #87cefa;">get-bin-discount</span> [bin]
+  (<span style="color: #b0c4de;">case</span> (<span style="color: #eedd82;">count</span> (<span style="color: #eedd82;">distinct</span> bin))
+    2 0.05
+    3 0.10
+    4 0.20
+    5 0.25
+    0.0))
+</pre>
+
+
+<p>
+We then multiply the number of books in the bin by the base book price
+(given as 8 euros in the problem statement) and apply the bin discount
+to the result.
+</p>
+
+
+
+<pre class="src src-clojure">(<span style="color: #00ffff;">def</span> <span style="color: #87cefa;">base-book-price</span> 8.00)
+
+(<span style="color: #00ffff;">defn</span> <span style="color: #87cefa;">calculate-bin-cost</span> [bin]
+  (<span style="color: #eedd82;">*</span> base-book-price (<span style="color: #eedd82;">count</span> bin) (<span style="color: #eedd82;">-</span> 1.0 (get-bin-discount bin))))
+</pre>
+
+
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-3-2" class="outline-3">
+<h3 id="sec-3-2"><span class="section-number-3">3.2</span> Find minimum cost partition directly via dynamic programming</h3>
+<div class="outline-text-3" id="text-3-2">
+
+
+<p>
+The tree traversal approach described in <a href="#sec-3-1-2">Find all basket partitions via tree traversal</a> does successfully return all partitions of the
+shopping basket contents. However, if order is disregarded, many of
+the returned partitions end up being redundant. As this translates
+into wasted computation, we would like to find an even more efficient
+partitioning scheme that eliminates redundant entries.
+</p>
+<p>
+The approach we will try this time is called <i>dynamic programming</i>.
+Under this scheme, the minimum cost partition of the shopping basket
+contents will be defined recursively as the partition which minimizes
+the sum of the first selected book group's cost and the minimum
+partition cost of the remaining shopping basket contents.
+</p>
+<p>
+Ultimately, this algorithm will also perform what is essentially a
+depth-first tree search on the states of the shopping basket's
+contents after each successive book group selection. This means we
+will be searching the same state space as we did in the tree traversal
+approach from the previous section.
+</p>
+<p>
+However, what is unique about the dynamic programming methodology is
+that we can avoid redundant searches through the state space by
+memoizing the minimum cost partition at each stage of our tree
+traversal in terms of the remaining shopping basket contents. Since we
+will be representing what is in the basket as a frequency table, the
+order in which we select book groups from the basket will not affect
+the number of memoized states.
+</p>
+<p>
+For readability, we simply recalculate the partition cost at each
+unmemoized step of the tree traversal. If we found this to be a major
+efficiency problem in our final application, we could calculate the
+bin cost of each newly selected book group and add that to the minimum
+partition cost of the remaining shopping basket contents at each step.
+We leave this as an exercise for the reader.
+</p>
+
+
+
+<pre class="src src-clojure">(<span style="color: #00ffff;">defn</span> <span style="color: #87cefa;">find-minimum-cost-partition-aux</span> [book-freqs-in-basket]
+  (<span style="color: #b0c4de;">if</span> (<span style="color: #eedd82;">seq</span> book-freqs-in-basket)
+    (<span style="color: #b0c4de;">let</span> [distinct-books (<span style="color: #eedd82;">keys</span> book-freqs-in-basket)]
+      (<span style="color: #b0c4de;">if-let</span> [discounted-book-groups (<span style="color: #eedd82;">seq</span> (find-discounted-subsets distinct-books))]
+        (<span style="color: #eedd82;">apply</span> min-key calculate-partition-cost
+               (<span style="color: #b0c4de;">for</span> [books discounted-book-groups]
+                 (<span style="color: #eedd82;">cons</span> books (find-minimum-cost-partition-aux (remove-from-basket book-freqs-in-basket books)))))
+        (<span style="color: #b0c4de;">let</span> [undiscounted-book-group (expand-book-freqs book-freqs-in-basket)]
+          (<span style="color: #eedd82;">list</span> undiscounted-book-group))))))
+(<span style="color: #00ffff;">def</span> <span style="color: #87cefa;">find-minimum-cost-partition-aux</span> (<span style="color: #eedd82;">memoize</span> find-minimum-cost-partition-aux))
+
+(<span style="color: #00ffff;">defn</span> <span style="color: #87cefa;">find-minimum-cost-partition-via-dynamic-programming</span> [shopping-basket-books]
+  (<span style="color: #b0c4de;">let</span> [minimum-cost-partition (find-minimum-cost-partition-aux (frequencies shopping-basket-books))]
+    [minimum-cost-partition (calculate-partition-cost minimum-cost-partition)]))
+</pre>
+
+
+<div id="footnotes">
+<h2 class="footnotes">Footnotes: </h2>
+<div id="text-footnotes">
+<p class="footnote"><sup><a class="footnum" name="fn.1" href="#fnr.1">1</a></sup> See <a href="http://en.wikipedia.org/wiki/Literate_programming">http://en.wikipedia.org/wiki/Literate_programming</a>
+for more information.
+</p>
+
+
+<p class="footnote"><sup><a class="footnum" name="fn.2" href="#fnr.2">2</a></sup> <a href="http://orgmode.org">http://orgmode.org</a>
+</p>
+
+
+<p class="footnote"><sup><a class="footnum" name="fn.3" href="#fnr.3">3</a></sup> <a href="http://clojure.org">http://clojure.org</a>
+</p>
+
+
+<p class="footnote"><sup><a class="footnum" name="fn.4" href="#fnr.4">4</a></sup> See
+<a href="http://en.wikipedia.org/wiki/Java_virtual_machine">http://en.wikipedia.org/wiki/Java_virtual_machine</a> for more
+information.
+</p>
+
+
+<p class="footnote"><sup><a class="footnum" name="fn.5" href="#fnr.5">5</a></sup> Connecting to an external Clojure
+              process is beyond the scope of this document but
+              requires setting up either SLIME + Swank-Clojure and
+              typing `M-x clojure-jack-in' or nrepl.el + NREPL and
+              typing `M-x nrepl-jack-in',
+</p>
+
+
+<p class="footnote"><sup><a class="footnum" name="fn.6" href="#fnr.6">6</a></sup> See
+              <a href="http://orgmode.org/manual/Evaluating-code-blocks.html">http://orgmode.org/manual/Evaluating-code-blocks.html</a>
+              for more information.
+</p></div>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+
+<div id="postamble">
+<p class="date">Date: 2012-09-10</p>
+<p class="author">Author: Gary W. Johnson</p>
+<p class="creator">Org version 7.8.11 with Emacs version 24</p>
+<a href="http://validator.w3.org/check?uri=referer">Validate XHTML 1.0</a>
+
+</div>
+</body>
+</html>

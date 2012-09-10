@@ -1,0 +1,436 @@
+#+TITLE: A Literate Programming Solution to the Potter Kata (http://codingdojo.org/cgi-bin/wiki.pl?KataPotter)
+#+AUTHOR: Gary W. Johnson
+#+EMAIL: lambdatronic@gmail.com
+#+DATE: 2012-09-10
+# Copyright 2012 Gary W. Johnson (lambdatronic@gmail.com)
+
+# To prepare your Emacs environment for tangling, weaving, or
+# evaluating this file, follow these steps:
+#
+# Under SLIME + Swank-Clojure:
+# 1. M-x org-babel-tangle (regenerates source files)
+# 2. M-x clojure-jack-in (starts SLIME + Clojure)
+# 3. C-c C-c (from within toplevel-load-block, loads source code into SLIME)
+# 4. M-x org-export-as-html (regenerate woven HTML documentation)
+#
+# Under nrepl.el + NREPL:
+# 1. M-x org-babel-tangle (regenerates source files)
+# 2. M-x nrepl-jack-in (starts nrepl.el + NREPL)
+# 3. M-x nrepl-interaction-mode (to enable NREPL keybindings in this buffer)
+# 4. C-c C-c (from within toplevel-load-block, loads source code into NREPL)
+# 5. M-x org-export-as-html (regenerate woven HTML documentation)
+#
+# As of the time of this writing (2012-09-10), there are some problems
+# using Emacs with Swank-Clojure or nrepl.el. To work around this, add
+# one of the following two code blocks to your emacs initialization
+# file:
+#
+# Under SLIME + Swank-Clojure:
+# ;; Patch result table rendering bug in ob-clojure (SLIME version)
+# (defun org-babel-execute:clojure (body params)
+#   "Execute a block of Clojure code with Babel."
+#   (require 'slime)
+#   (with-temp-buffer
+#     (insert (org-babel-expand-body:clojure body params))
+#     ((lambda (result)
+#        (destructuring-bind (output value) result
+#          (let ((result-params (cdr (assoc :result-params params))))
+#            (if (or (member "scalar" result-params)
+#                    (member "verbatim" result-params))
+#                value
+#              (condition-case nil (org-babel-script-escape value)
+#                (error value))))))
+#      (slime-eval
+#       `(swank:eval-and-grab-output
+#         ,(buffer-substring-no-properties (point-min) (point-max)))
+#       (cdr (assoc :package params))))))
+#
+# Under nrepl.el + NREPL:
+# ;; Patch ob-clojure to work with nrepl
+# (declare-function nrepl-send-string-sync "ext:nrepl" (code &optional ns))
+#
+# (defun org-babel-execute:clojure (body params)
+#   "Execute a block of Clojure code with Babel."
+#   (require 'nrepl)
+#   (with-temp-buffer
+#     (insert (org-babel-expand-body:clojure body params))
+#     ((lambda (result)
+#        (let ((result-params (cdr (assoc :result-params params))))
+#          (if (or (member "scalar" result-params)
+#                  (member "verbatim" result-params))
+#              result
+#            (condition-case nil (org-babel-script-escape result)
+#              (error result)))))
+#      (plist-get (nrepl-send-string-sync
+#                  (buffer-substring-no-properties (point-min) (point-max))
+#                  (cdr (assoc :package params)))
+#                 :value))))
+
+#+name: toplevel-load-block
+#+begin_src clojure :exports none :tangle ../src/potter.clj :padline no :results silent
+(ns potter
+  (:use [clojure.set :only [union intersection]]
+        [clojure.math.combinatorics :only [combinations subsets]]))
+
+<<partition?>>
+
+<<find-power-set>>
+
+<<find-all-partitions>>
+
+<<find-all-basket-partitions-via-power-sets>>
+
+<<find-discounted-subsets>>
+
+<<find-all-basket-partitions-via-tree-traversal>>
+
+<<get-bin-discount>>
+
+<<calculate-bin-cost>>
+
+<<calculate-partition-cost>>
+
+<<find-minimum-cost-partition-naive>>
+
+<<find-minimum-cost-partition-via-dynamic-programming>>
+#+end_src
+
+* Introduction
+
+This is a very special document in that it not only explains the inner
+workings of this software system but also contains the complete source
+code of its implementation. Such a document is called a Literate
+Program[fn:Foo: See http://en.wikipedia.org/wiki/Literate_programming
+for more information.] after the software development paradigm
+proposed by Donald Knuth in the late 1970s and first implemented in
+his 1981 WEB system.
+
+Unlike WEB and its later offspring CWEB, which were each limited to a
+single programming language (Pascal and C respectively), this Literate
+Program has been written using Emacs' Org-Mode[fn::
+http://orgmode.org], allowing us to freely intermix any number of
+programming languages to create our final product. The main
+programming language we will use here is Clojure[fn::
+http://clojure.org], a modern dialect of Lisp that targets the Java
+Virtual Machine (JVM)[fn:: See
+http://en.wikipedia.org/wiki/Java_virtual_machine for more
+information.]. However, if we needed helper programs in other
+languages (e.g., Bash, C++, Python), their code could also be freely
+intermixed in this document and automatically extracted later for
+compilation and execution.
+
+In addition to reading this document, its Org source file (potter.org)
+may be opened in Emacs and manipulated in three ways:
+
+- Tangle :: Typing `M-x org-babel-tangle' will cause Emacs to extract
+            all the source code blocks within potter.org into separate
+            files and rearrange them into valid compilation order so
+            that they may be compiled into an executable application.
+
+- Weave :: Typing `M-x org-export-as-pdf' or `M-x org-export-as-html'
+           will cause Emacs to generate an attractively typeset
+           version of potter.org as either a PDF file (potter.pdf) or an
+           HTML webpage (potter.html) respectively. This is likely the
+           way in which the manual you are currently reading was
+           created.
+
+- Evaluate :: If potter.org is opened in Emacs' Org major mode (`M-x
+              org-mode'), and Emacs is connected to an external
+              Clojure process[fn:: Connecting to an external Clojure
+              process is beyond the scope of this document but
+              requires setting up either SLIME + Swank-Clojure and
+              typing `M-x clojure-jack-in' or nrepl.el + NREPL and
+              typing `M-x nrepl-jack-in', ], the code blocks within
+              potter.org may be loaded and executed individually by the
+              connected Clojure server using `M-x
+              org-babel-execute-src-block' (typically bound to `C-c
+              C-c').[fn:: See
+              http://orgmode.org/manual/Evaluating-code-blocks.html
+              for more information.]
+
+See comments in the header section of potter.org for the specific order
+in which the above Emacs commands should be executed.
+
+* Problem Description
+
+Once upon a time there was a series of 5 books about a very English
+hero called Harry. (At least when this Kata was invented, there were
+only 5. Since then they have multiplied) Children all over the world
+thought he was fantastic, and, of course, so did the publisher. So in
+a gesture of immense generosity to mankind, (and to increase sales)
+they set up the following pricing model to take advantage of Harry's
+magical powers.
+
+One copy of any of the five books costs 8 EUR. If, however, you buy
+two different books from the series, you get a 5% discount on those
+two books. If you buy 3 different books, you get a 10% discount. With
+4 different books, you get a 20% discount. If you go the whole hog,
+and buy all 5, you get a huge 25% discount.
+
+Note that if you buy, say, four books, of which 3 are different
+titles, you get a 10% discount on the 3 that form part of a set, but
+the fourth book still costs 8 EUR.
+
+Potter mania is sweeping the country and parents of teenagers
+everywhere are queueing up with shopping baskets overflowing with
+Potter books. Your mission is to write a piece of code to calculate
+the price of any conceivable shopping basket, giving as big a discount
+as possible.
+
+* Procedure
+
+Given a shopping basket specification [1 1 3 2 1 5 3 4] (i.e., a
+vector of the books present in the basket by their number in the
+series), our goal is to find the partition of the basket's contents
+that minimizes the total cost of purchasing the books in the basket.
+
+** Find all partitions and then calculate their costs
+
+One approach that we could take to solve this problem is as follows:
+
+1. Find all partitions of the shopping basket contents.
+2. Calculate the cost of the shopping basket contents using each partition.
+3. Select the minimum cost partition.
+
+#+name: find-minimum-cost-partition-naive
+#+begin_src clojure
+(def find-all-basket-partitions find-all-basket-partitions-via-tree-traversal)
+
+(defn find-minimum-cost-partition-naive [shopping-basket-books]
+  (let [all-partitions (find-all-basket-partitions shopping-basket-books)
+        all-costs      (map calculate-partition-cost all-partitions)]
+    (apply min-key val (zipmap all-partitions all-costs))))
+#+end_src
+
+*** Find all basket partitions via power sets
+
+A partition $P$ of a set $S$ is a subset of all its subsets, for which
+the following three conditions hold:
+
+1. $P$ does not contain the empty set $\emptyset$ (i.e., $\emptyset \notin P$).
+2. The union of the elements of $P$ is equal to $S$.
+3. The intersection of any two distinct elements of $P$ is the empty set $\emptyset$.
+
+#+name: partition?
+#+begin_src clojure
+(defn partition? [P S]
+  (and (not (contains? P #{}))
+       (= (apply union P) S)
+       (every? #(= (intersection (first %) (second %)) #{}) (combinations P 2))))
+#+end_src
+
+The set of all subsets of a set $S$ (including the empty set
+$\emptyset$ and $S$ itself) is called the /power set/ of $S$. The
+number of elements in the power set of $S$ is equal to $2^{|S|}$,
+where $|S|$ is the number of elements in $S$.
+
+#+name: find-power-set
+#+begin_src clojure
+(defn find-power-set [S]
+  (set (map set (subsets S))))
+#+end_src
+
+To find all partitions of the set $S$, we could naively find all
+subsets of its power set that satisfy the partition? predicate given
+above.
+
+#+name: find-all-partitions
+#+begin_src clojure
+(defn find-all-partitions [S]
+  (filter #(partition? % S) (subsets (find-power-set S))))
+#+end_src
+
+Of course, since we are working with sets and no redundant elements
+are allowed within sets, we must begin our analysis by mapping the
+input shopping basket to a set of distinct elements. We do this by
+representing each book in the basket by its index in the input vector.
+Finally, once we have found all partitions of the index set, we
+translate the returned indices back to their book numbers.
+
+#+name: find-all-basket-partitions-via-power-sets
+#+begin_src clojure
+(defn find-all-basket-partitions-via-power-sets [shopping-basket-books]
+  (let [S (set (range (count shopping-basket-books)))]
+    (for [P (find-all-partitions S)]
+      (for [subset P]
+        (map shopping-basket-books subset)))))
+#+end_src
+
+*** Find all basket partitions via tree traversal
+
+Although mathematically correct, our first formulation is extremely
+computationally inefficient and will scale poorly as the size of $S$
+grows. Recall that our goal is to maximize the discount available to
+the shopper, and since no discounts are applied for groups of less
+than two books, we can exclude all such sets within the power set.
+
+#+name: find-discounted-subsets
+#+begin_src clojure
+(defn find-discounted-subsets [S]
+  (remove #(< (count %) 2) (subsets S)))
+
+(defn find-discounted-subsets-alternate [S]
+  (mapcat #(combinations S %) (range 2 6)))
+#+end_src
+
+Since we are working with sets and no redundant elements are allowed
+within a set, we must begin our analysis by mapping the shopping
+basket contents to a set of distinct elements. For our second attempt,
+we do this by creating a map of distinct books (by their number in the
+series) to the number of times each appears in the basket.
+
+We can then envision a basket partitioning procedure, that proceeds by
+iteratively selecting one of the discounted subsets of the
+distinct books remaining in the basket until the basket is either
+empty or only contains books which cannot be grouped into a
+discounted subset. These remaining books are then grouped
+together to form the final subset of the partition.
+
+In order to explore all such possible partitions, we construct a tree
+whose nodes are pairs of (book-freqs-in-basket, selected-book-groups).
+Successor nodes are constructed by selecting all discounted subsets of
+the parent node's book-freqs-in-basket and when none remain, simply
+grouping together any books still in book-freqs-in-basket as the final
+undiscounted subset. In such a tree, each path from the root node
+(i.e., the initial shopping basket contents) to a leaf node (i.e., one
+whose book-freqs-in-basket value is empty) represents a partition of
+the tree. Each leaf node's selected-book-groups field will contain a
+complete partition of the shopping basket contents. To find all
+partitions, we simply traverse this tree and return the
+selected-book-groups field on each leaf node.
+
+#+name: find-all-basket-partitions-via-tree-traversal
+#+begin_src clojure
+(defstruct node :book-freqs-in-basket :selected-book-groups)
+
+(defn remove-from-basket [book-freqs subset]
+  (into {} (remove #(zero? (val %)) (reduce #(update-in %1 [%2] dec) book-freqs subset))))
+
+(defn expand-book-freqs [book-freqs]
+  (mapcat (fn [[book-id frequency]] (repeat frequency book-id)) book-freqs))
+
+(defn successors [{:keys [book-freqs-in-basket selected-book-groups]}]
+  (let [distinct-books (keys book-freqs-in-basket)]
+    (if-let [discounted-book-groups (seq (find-discounted-subsets distinct-books))]
+      (for [books discounted-book-groups]
+        (struct-map node
+          :book-freqs-in-basket (remove-from-basket book-freqs-in-basket books)
+          :selected-book-groups (cons books selected-book-groups)))
+      (let [undiscounted-book-group (expand-book-freqs book-freqs-in-basket)]
+        (list (struct-map node
+                :book-freqs-in-basket nil
+                :selected-book-groups (if (seq undiscounted-book-group)
+                                        (cons undiscounted-book-group selected-book-groups)
+                                        selected-book-groups)))))))
+
+(defn leaf-node? [node]
+  (nil? (:book-freqs-in-basket node)))
+
+(defn find-next-partition [[open-list partition]]
+  (if-let [node (first open-list)]
+    (if (leaf-node? node)
+      [(rest open-list) (:selected-book-groups node)]
+      (recur [(concat (successors node) (rest open-list)) nil]))))
+
+(defn find-all-basket-partitions-via-tree-traversal [shopping-basket-books]
+  (let [root-node (struct-map node
+                    :book-freqs-in-basket (frequencies shopping-basket-books)
+                    :selected-book-groups ())]
+    (->> [(list root-node) nil]
+         (iterate find-next-partition)
+         rest
+         (take-while seq)
+         (map second))))
+#+end_src
+
+*** Calculate partition cost
+
+The cost of a partition is simply calculated as the sum of the costs
+of its bins.
+
+#+name: calculate-partition-cost
+#+begin_src clojure
+(defn calculate-partition-cost [partition]
+  (reduce + (map calculate-bin-cost partition)))
+#+end_src
+
+To calculate the cost of a bin, we first determine the bin discount,
+which is a function of the number of distinct books in the bin as
+described in [[Problem Description]].
+
+#+name: get-bin-discount
+#+begin_src clojure
+(defn get-bin-discount [bin]
+  (case (count (distinct bin))
+    2 0.05
+    3 0.10
+    4 0.20
+    5 0.25
+    0.0))
+#+end_src
+
+We then multiply the number of books in the bin by the base book price
+(given as 8 euros in the problem statement) and apply the bin discount
+to the result.
+
+#+name: calculate-bin-cost
+#+begin_src clojure
+(def base-book-price 8.00)
+
+(defn calculate-bin-cost [bin]
+  (* base-book-price (count bin) (- 1.0 (get-bin-discount bin))))
+#+end_src
+
+** Find minimum cost partition directly via dynamic programming
+
+The tree traversal approach described in [[Find all basket partitions
+via tree traversal]] does successfully return all partitions of the
+shopping basket contents. However, if order is disregarded, many of
+the returned partitions end up being redundant. As this translates
+into wasted computation, we would like to find an even more efficient
+partitioning scheme that eliminates redundant entries.
+
+The approach we will try this time is called /dynamic programming/.
+Under this scheme, the minimum cost partition of the shopping basket
+contents will be defined recursively as the partition which minimizes
+the sum of the first selected book group's cost and the minimum
+partition cost of the remaining shopping basket contents.
+
+Ultimately, this algorithm will also perform what is essentially a
+depth-first tree search on the states of the shopping basket's
+contents after each successive book group selection. This means we
+will be searching the same state space as we did in the tree traversal
+approach from the previous section.
+
+However, what is unique about the dynamic programming methodology is
+that we can avoid redundant searches through the state space by
+memoizing the minimum cost partition at each stage of our tree
+traversal in terms of the remaining shopping basket contents. Since we
+will be representing what is in the basket as a frequency table, the
+order in which we select book groups from the basket will not affect
+the number of memoized states.
+
+For readability, we simply recalculate the partition cost at each
+unmemoized step of the tree traversal. If we found this to be a major
+efficiency problem in our final application, we could calculate the
+bin cost of each newly selected book group and add that to the minimum
+partition cost of the remaining shopping basket contents at each step.
+We leave this as an exercise for the reader.
+
+#+name: find-minimum-cost-partition-via-dynamic-programming
+#+begin_src clojure
+(defn find-minimum-cost-partition-aux [book-freqs-in-basket]
+  (if (seq book-freqs-in-basket)
+    (let [distinct-books (keys book-freqs-in-basket)]
+      (if-let [discounted-book-groups (seq (find-discounted-subsets distinct-books))]
+        (apply min-key calculate-partition-cost
+               (for [books discounted-book-groups]
+                 (cons books (find-minimum-cost-partition-aux (remove-from-basket book-freqs-in-basket books)))))
+        (let [undiscounted-book-group (expand-book-freqs book-freqs-in-basket)]
+          (list undiscounted-book-group))))))
+(def find-minimum-cost-partition-aux (memoize find-minimum-cost-partition-aux))
+
+(defn find-minimum-cost-partition-via-dynamic-programming [shopping-basket-books]
+  (let [minimum-cost-partition (find-minimum-cost-partition-aux (frequencies shopping-basket-books))]
+    [minimum-cost-partition (calculate-partition-cost minimum-cost-partition)]))
+#+end_src
