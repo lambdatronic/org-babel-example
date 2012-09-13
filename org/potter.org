@@ -67,7 +67,7 @@
 #                 :value))))
 
 #+name: toplevel-load-block
-#+begin_src clojure :exports none :tangle ../src/potter.clj :padline no :results silent
+#+begin_src clojure :exports none :tangle ../src/potter.clj :padline no :results silent :noweb yes
 (ns potter
   (:use [clojure.set :only [union intersection]]
         [clojure.math.combinatorics :only [combinations subsets]]))
