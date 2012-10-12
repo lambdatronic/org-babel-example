@@ -4,25 +4,45 @@
 #+DATE: 2012-09-10
 # Copyright 2012 Gary W. Johnson (lambdatronic@gmail.com)
 
-# To prepare your Emacs environment for tangling, weaving, or
-# evaluating this file, follow these steps:
+##############################################################################
 #
-# Under SLIME + Swank-Clojure:
-# 1. M-x org-babel-tangle (regenerates source files)
-# 2. M-x clojure-jack-in (starts SLIME + Clojure)
-# 3. C-c C-c (from within toplevel-load-block, loads source code into SLIME)
-# 4. M-x org-export-as-html (regenerate woven HTML documentation)
+# In order to load org-babel in Emacs, add this code to your
+# initialization file:
 #
-# Under nrepl.el + NREPL:
-# 1. M-x org-babel-tangle (regenerates source files)
-# 2. M-x nrepl-jack-in (starts nrepl.el + NREPL)
-# 3. M-x nrepl-interaction-mode (to enable NREPL keybindings in this buffer)
-# 4. C-c C-c (from within toplevel-load-block, loads source code into NREPL)
-# 5. M-x org-export-as-html (regenerate woven HTML documentation)
+# ;; Add org-babel support
+# (when (locate-file "ob" load-path load-suffixes)
+#   (require 'ob)
+#   (require 'ob-tangle)
+#   (require 'ob-clojure)
+#   (org-babel-do-load-languages
+#    'org-babel-load-languages
+#    '((emacs-lisp . t)
+#      (clojure    . t))))
+#
+# ;; Pull in the htmlize library for pretty source code in HTML output
+# (require 'htmlize)
+#
+# ;; Fontify source code in org-latex export to PDF
+# (require 'org-latex)
+# (setq org-export-latex-listings 'minted)
+# (add-to-list 'org-export-latex-packages-alist '("" "minted"))
+# (setq org-export-latex-custom-lang-environments
+#       '(
+#         (emacs-lisp "common-lispcode")
+#         ))
+# (setq org-export-latex-minted-options
+#       '(("fontsize" "\\scriptsize")
+#         ("linenos" "false")))
+# (setq org-latex-to-pdf-process '("pdflatex -interaction nonstopmode -shell-escape -output-directory %o %f"
+#                                  "bibtex %b"
+#                                  "pdflatex -interaction nonstopmode -shell-escape -output-directory %o %f"
+#                                  "pdflatex -interaction nonstopmode -shell-escape -output-directory %o %f"))
+#
+##############################################################################
 #
 # As of the time of this writing (2012-09-10), there are some problems
-# using Emacs with Swank-Clojure or nrepl.el. To work around this, add
-# one of the following two code blocks to your emacs initialization
+# using Emacs with Swank-Clojure or nrepl.el. To work around this, also add
+# one of the following two code blocks to your Emacs initialization
 # file:
 #
 # Under SLIME + Swank-Clojure:
@@ -65,6 +85,26 @@
 #                  (buffer-substring-no-properties (point-min) (point-max))
 #                  (cdr (assoc :package params)))
 #                 :value))))
+#
+##############################################################################
+#
+# Finally, to prepare your Emacs environment for tangling, weaving, or
+# evaluating this file, open it in org-mode and follow these steps:
+#
+# Under SLIME + Swank-Clojure:
+# 1. M-x org-babel-tangle (regenerates source files)
+# 2. M-x clojure-jack-in (starts SLIME + Clojure)
+# 3. C-c C-c (from within toplevel-load-block, loads source code into SLIME)
+# 4. M-x org-export-as-html (regenerate woven HTML documentation)
+#
+# Under nrepl.el + NREPL:
+# 1. M-x org-babel-tangle (regenerates source files)
+# 2. M-x nrepl-jack-in (starts nrepl.el + NREPL)
+# 3. M-x nrepl-interaction-mode (to enable NREPL keybindings in this buffer)
+# 4. C-c C-c (from within toplevel-load-block, loads source code into NREPL)
+# 5. M-x org-export-as-html (regenerate woven HTML documentation)
+#
+##############################################################################
 
 #+name: toplevel-load-block
 #+begin_src clojure :exports none :tangle ../src/potter.clj :padline no :results silent :noweb yes
